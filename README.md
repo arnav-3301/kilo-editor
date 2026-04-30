@@ -37,7 +37,22 @@ The editor retrieves screen size using the `TIOCGWINSZ` ioctl call. It implement
 
 ## Build Instructions
 
+This project includes a `Makefile` for streamlined compilation. Ensure your core source file is named `main.c`.
+
 ### Compilation
-Requires a POSIX-compliant system and a C compiler (GCC/Clang).
+To build the executable, simply run:
 ```bash
-gcc -o kilo kilo.c -Wall -Wextra -pedantic -std=c99
+make
+```
+
+### Execution
+To launch the editor:
+```bash
+./kilo
+```
+
+### Cleanup
+To remove the compiled binary and clean your working directory:
+```bash
+make clean
+```
