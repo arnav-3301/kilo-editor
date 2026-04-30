@@ -6,3 +6,7 @@ all: $(TARGET)
 
 $(TARGET): main.c
 	@$(CC) main.c -o $(TARGET) $(CFLAGS)
+
+
+clean:
+	@rm -rf $(TARGET)
