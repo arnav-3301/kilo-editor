@@ -1,3 +1,4 @@
+
 # Kilo Text Editor
 
 A minimalist terminal-based text editor written in C, implementing low-level terminal control, raw mode handling, and structural file buffer manipulation. This project explores the interaction between a C program and the POSIX terminal interface to create a functional, self-contained text editing environment without high-level libraries like `ncurses`.
