@@ -587,7 +587,13 @@ void editorOpen(char *filename) {
     editorSelectSyntaxHighlight();
 
     FILE *fp = fopen(filename, "r");
-    if(!fp) die("fopen");
+    if(!fp){
+        if(errno == ENOENT){
+            fp = fopen(filename, "w");
+            return;
+        }
+        die("fopen");
+    }
 
     char *line = NULL;
     size_t linecap = 0;
