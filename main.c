@@ -101,7 +101,16 @@ char *C_HL_keywords[] = {
     "return", "struct", "class", "typedef", "union", "enum", "static",
     // data types
     "int|", "long|", "double|", "float|", "char|", "unsigned|", "signed|",
-    "void|", NULL 
+    "void|", "bool|", "NULL|", NULL 
+};
+
+char *Python_HL_extensions[] = {".py", NULL};
+char *Python_HL_keywords[] = {
+    "if", "elif", "else", "while", "for", "not", "in", "continue", "break",
+    "return", "def", "from", "self",
+    // data types
+    "int|", "float|", "complex|", "str|", "bool|", "list|", "tuple|", "range|",
+    "dict|", "set|", "None|", NULL  
 };
 
 struct editorSyntax HLDB[] = {
@@ -112,6 +121,13 @@ struct editorSyntax HLDB[] = {
         "//", "/*", "*/",
         HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS
     },
+    {
+        "python",
+        Python_HL_extensions,
+        Python_HL_keywords,
+        "#", "\"\"\"", "\"\"\"",
+        HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS
+    }    
 };
 
 #define HLDB_ENTRIES (sizeof(HLDB) / sizeof(HLDB[0]))
@@ -345,6 +361,7 @@ void editorUpdateSyntax(erow *row){
         prev_sep = is_separator(c);
         i++;
     }
+
     int changed = (row->hl_open_comment != in_comment);
     row->hl_open_comment = in_comment;
     if(changed && row->idx + 1 < E.numrows)
@@ -470,6 +487,7 @@ void editorDelRow(int at){
     if(at < 0 || at >= E.numrows) return;
     editorFreeRow(&E.row[at]);
     memmove(&E.row[at], &E.row[at + 1], sizeof(erow) * (E.numrows - at - 1));
+    for(int j = at; j < E.numrows - 1; j++) E.row[j].idx--;
     E.numrows--;
     E.dirty++;
 }
@@ -496,7 +514,6 @@ void editorRowAppendString(erow *row, char *s, size_t len){
 void editorRowDelChar(erow *row, int at){
     if(at < 0 || at > row->size) return;
     memmove(&row->chars[at], &row->chars[at + 1], row->size - at);
-    for(int j = at; j < E.numrows - 1; j++) E.row[j].idx--;
     row->size--;
     editorUpdateRow(row);
     E.dirty++;

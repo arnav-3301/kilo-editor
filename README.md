@@ -14,6 +14,11 @@ The editor manipulates the `termios` structure to transition the terminal from c
 ### Rendering Engine & Buffer Operations
 To mitigate terminal flicker, the editor utilizes a custom dynamic append buffer (`struct abuf`). Instead of making multiple `write()` system calls for every character or line, the editor appends all screen updates (ANSI escape sequences and text strings) into a single heap-allocated buffer, executing a single atomic `write()` call to `STDOUT_FILENO` per refresh cycle.
 
+### Syntax Parsing & Highlighting Engine
+The editor implements a dynamic, state-driven syntax highlighting system:
+* **Highlight Database (`HLDB[]`):** An array of `editorSyntax` structures that stores language-specific rules (keywords, single/multi-line comment tags, string literals). The editor automatically identifies the filetype via its extension and applies the corresponding syntax rules.
+* **Row-Level State Tracking:** The core `erow` struct is extended to track text types (normal, numbers, strings, comments, keywords) byte-by-byte. It also stores an open-comment flag to manage the cascading state of multi-line comments across rendering cycles.
+
 ### State & Modification Tracking (Dirty Flag)
 The global editor state maintains a **dirty flag** to monitor file modifications. 
 * The flag increments upon any text editing operation (insertions, deletions).
@@ -23,16 +28,17 @@ The global editor state maintains a **dirty flag** to monitor file modifications
 File serialization is handled safely through an internal save pipeline:
 * If saving a newly initialized buffer, the engine invokes `editorPrompt()` to capture a target filename interactively from the status bar.
 * For existing files, modifications are committed directly to the established filename.
-* **Interactive Prompt Callback (`editorPrompt`):** The prompt system takes a callback function as an argument, allowing the editor to process user input incrementally (character-by-character). This is heavily utilized for features like dynamic searching, where operations are executed as the string changes, ending safely when the user presses `ESC` or `Enter`.
+* **Interactive Prompt Callback (`editorPrompt`):** The prompt system takes a callback function as an argument, allowing the editor to process user input incrementally (character-by-character). This is heavily utilized for dynamic operations like search.
 
 ### Compilation Design
-To accommodate C's single-pass compilation model without breaking sequential structural design, the codebase implements forward-declared **prototypes**. Three core functional dependencies are explicitly prototyped at the top of the file to resolve implicit declaration hazards prior to their full definitions.
+To accommodate C's single-pass compilation model without breaking sequential structural design, the codebase implements forward-declared **prototypes**. Core functional dependencies are explicitly prototyped at the top of the file to resolve implicit declaration hazards prior to their full definitions.
 
 ## Features
 * Byte-by-byte raw input processing and safe terminal restoration via `atexit` hooks.
 * Multi-row text rendering and dynamic status bar display.
 * **Text Editing:** In-buffer text insertion, Backspace, and Delete key routing.
-* **Incremental Search:** Prompts the user to enter a word and dynamically updates the search character-by-character. Users can navigate through all matches using the arrow keys. If aborted or confirmed (`ESC` or `Enter`), the cursor retains its position at the last matched pattern. *(Note: advanced pattern matching/regex is not implemented).*
+* **Syntax Highlighting:** Real-time syntax coloring for C/C++ (stable) and Python (in development).
+* **Incremental Search:** Prompts the user to enter a word and dynamically updates the search character-by-character. Visual matches are now **highlighted in real-time**. Users can navigate through all matches using the arrow keys. 
 * **State Safety:** Warns users of unsaved changes in the status bar upon exit termination attempts. To bypass and force-quit, the user must trigger the quit sequence a defined number of times (`KILO_QUIT_TIMES`).
 
 ## Keybindings
@@ -69,3 +75,8 @@ To remove the compiled binary and clean your working directory:
 ```bash
 make clean
 ```
+
+## Recent Changelog & Fixes
+* **Feature:** Added `HLDB[]` architecture for filetype-specific syntax highlighting (C/C++ implemented, Python base syntax added).
+* **Feature:** Search results are now visually highlighted during incremental search.
+* **Bug Fix (Row Index Desync):** Fixed a critical structural bug where deleting characters inside a row (`editorRowDelChar`) incorrectly decremented the absolute row index (`idx`). This previously caused the file geometry to desync, breaking cursor bounds checking and trapping the cursor on the modified line. Row index shifting is now strictly isolated to `editorDelRow`.
