@@ -1,4 +1,3 @@
-
 # Kilo Text Editor
 
 A minimalist terminal-based text editor written in C, implementing low-level terminal control, raw mode handling, and structural file buffer manipulation. This project explores the interaction between a C program and the POSIX terminal interface to create a functional, self-contained text editing environment without high-level libraries like `ncurses`.
@@ -24,6 +23,7 @@ The global editor state maintains a **dirty flag** to monitor file modifications
 File serialization is handled safely through an internal save pipeline:
 * If saving a newly initialized buffer, the engine invokes `editorPrompt()` to capture a target filename interactively from the status bar.
 * For existing files, modifications are committed directly to the established filename.
+* **Interactive Prompt Callback (`editorPrompt`):** The prompt system takes a callback function as an argument, allowing the editor to process user input incrementally (character-by-character). This is heavily utilized for features like dynamic searching, where operations are executed as the string changes, ending safely when the user presses `ESC` or `Enter`.
 
 ### Compilation Design
 To accommodate C's single-pass compilation model without breaking sequential structural design, the codebase implements forward-declared **prototypes**. Three core functional dependencies are explicitly prototyped at the top of the file to resolve implicit declaration hazards prior to their full definitions.
@@ -32,6 +32,7 @@ To accommodate C's single-pass compilation model without breaking sequential str
 * Byte-by-byte raw input processing and safe terminal restoration via `atexit` hooks.
 * Multi-row text rendering and dynamic status bar display.
 * **Text Editing:** In-buffer text insertion, Backspace, and Delete key routing.
+* **Incremental Search:** Prompts the user to enter a word and dynamically updates the search character-by-character. Users can navigate through all matches using the arrow keys. If aborted or confirmed (`ESC` or `Enter`), the cursor retains its position at the last matched pattern. *(Note: advanced pattern matching/regex is not implemented).*
 * **State Safety:** Warns users of unsaved changes in the status bar upon exit termination attempts. To bypass and force-quit, the user must trigger the quit sequence a defined number of times (`KILO_QUIT_TIMES`).
 
 ## Keybindings
@@ -40,6 +41,7 @@ To accommodate C's single-pass compilation model without breaking sequential str
 |:---|:---|
 | `Ctrl + Q` | Safe Quit / Force Quit (Requires hitting `KILO_QUIT_TIMES` if file is dirty) |
 | `Ctrl + S` | Save File (Triggers `editorPrompt` for filenames on new buffers) |
+| `Ctrl + F` | Search (Incremental word search; use Arrow Keys to navigate matches, `ESC`/`Enter` to exit) |
 | `Arrow Keys` | Move Cursor |
 | `Page Up / Down`| Scroll full screen |
 | `Home / End` | Move to start/end of current window boundaries |
